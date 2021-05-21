@@ -1,7 +1,7 @@
 function [postParticles] = Estimator(prevPostParticles, sens, act, estConst, km)
 % The estimator function. The function will be called in two different
 % modes: If km==0, the estimator is initialized. If km > 0, the
-% estimator does an iteration for a single sample time interval using the 
+% estimator does an iteration for a single sample time int  erval using the 
 % previous posterior particles passed to the estimator in
 % prevPostParticles and the sensor measurement and control inputs.
 %

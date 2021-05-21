@@ -75,10 +75,10 @@ if (tm == 0)
     driftEst = 0; % 1x1 matrix
     
     % initial state variance
-    posVar = pi/16*estConst.StartRadiusBound^4 * [1,1]; % 1x2 matrix
+    posVar = pi/16*estConst.StartRadiusBound ^ 4 * [1,1]; % 1x2 matrix
     linVelVar = [0, 0]; % 1x2 matrix
-    oriVar = estConst.RotationStartBound^2 / 3; % 1x1 matrix
-    windVar = estConst.WindAngleStartBound^2 / 3; % 1x1 matrix
+    oriVar = estConst.RotationStartBound ^ 2 / 3; % 1x1 matrix
+    windVar = estConst.WindAngleStartBound ^ 2 / 3; % 1x1 matrix
     driftVar = estConst.GyroDriftStartBound; % 1x1 matrix
     
     % estimator variance init (initial posterior variance)
@@ -88,6 +88,7 @@ if (tm == 0)
     % time of last update
     estState.tm = tm;
     
+    disp('shit');
     return;
 end
 
