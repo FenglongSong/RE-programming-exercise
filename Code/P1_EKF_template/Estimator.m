@@ -75,7 +75,7 @@ if (tm == 0)
     driftEst = 0; % 1x1 matrix
     
     % initial state variance
-    posVar = pi/16*estConst.StartRadiusBound^4 * [1,1]; % 1x2 matrix
+    posVar = pi/4 * estConst.StartRadiusBound^4 * [1,1]; % 1x2 matrix
     linVelVar = [0, 0]; % 1x2 matrix
     oriVar = estConst.RotationStartBound^2 / 3; % 1x1 matrix
     windVar = estConst.WindAngleStartBound^2 / 3; % 1x1 matrix
@@ -87,9 +87,9 @@ if (tm == 0)
     estState.xm = [posEst, linVelEst, oriEst, windEst, driftEst];
     % time of last update
     estState.tm = tm;
-    
     return;
 end
+
 
 %% Estimator iteration.
 % get time since last estimator update
@@ -99,44 +99,34 @@ estState.tm = tm; % update measurement update time
 % the order of state variable here is:
 % x = [px, py, sx, sy, phi, rho, b]'
 
-
-if isempty(actuate)
-    u_t = 0;
-    u_r = 0;
-else
-    u_t = actuate(1);
-    u_r = actuate(2);
-end
+u_t = actuate(1);
+u_r = actuate(2);
 
 %% prior update
 
 % solve xp[k]
 x0 = estState.xm';
-% tspan = linspace(tm-dt, tm, 50);
-tspan = [tm-dt, tm];
+x0 = reshape(x0, [7,1]);
+% tspan = [tm-dt, tm];
+tspan = linspace(tm-dt, tm, 50);
 [t, x] = ode45(@(t, x) dynamics_mean(t, x, estConst, u_t, u_r), tspan, x0);
 xp = x(end, :)';
 
 % solve Pp[k]
 P0 = estState.Pm;
-[t, P] = ode45(@(t, P) dynamics_variance(t, P, xp, estConst, u_t, u_r), tspan, P0);
+[~, P] = ode45(@(t, P) dynamics_variance(t, P, estState.xm, estConst, u_t, u_r), tspan, P0(:));
 Pp = P(end, :);
-Pp = reshape(Pp, size(P0));
+Pp = reshape(Pp, [7,7]);
 
 
 %% measurement update
-px = estState.xm(1);
-py = estState.xm(2);
-sx = estState.xm(3);
-sy = estState.xm(4);
-phi = estState.xm(5);
-rho = estState.xm(6);
-b = estState.xm(7);
-
-Cdh = estConst.dragCoefficientHydr;
-Cda = estConst.dragCoefficientAir;
-Cr = estConst.rudderCoefficient;
-Cw = estConst.windVel;
+px = xp(1);
+py = xp(2);
+sx = xp(3);
+sy = xp(4);
+phi = xp(5);
+rho = xp(6);
+b = xp(7);
 
 x_a = estConst.pos_radioA(1);
 y_a = estConst.pos_radioA(2);
@@ -144,7 +134,6 @@ x_b = estConst.pos_radioB(1);
 y_b = estConst.pos_radioB(2);
 x_c = estConst.pos_radioC(1);
 y_c = estConst.pos_radioC(2);
-
 
 H = zeros(5,7);
 H(1,1) = (px - x_a) / sqrt( (px-x_a)^2 + (py-y_a)^2 );
@@ -178,9 +167,8 @@ K = Pp * H' / (H * Pp * H' + M * R * M');
 xm = xp + K * (z - h);
 Pm = (eye(7) - K*H) * Pp;
 
-estState.xm = xm;
+estState.xm = xm';
 estState.Pm = Pm;
-disp(size(xm));
 
 % Get resulting estimates and variances
 % Output quantities
@@ -200,6 +188,8 @@ driftVar = Pm(7,7);
 end
 
 
+
+%% 
 function dxdt = dynamics_mean(t, x, estConst, u_t, u_r)
 px = x(1);
 py = x(2);
@@ -223,6 +213,7 @@ dxdt(5) = Cr * u_r;
 
 end
 
+
 function dPdt = dynamics_variance(t, P, x, estConst, u_t, u_r)
 px = x(1);
 py = x(2);
@@ -241,12 +232,12 @@ A = zeros(7);
 squareroot = sqrt( (sx-Cw*cos(rho))^2 + (sy-Cw*sin(rho))^2 );
 A(1,3) = 1;
 A(2,4) = 1;
-A(3,3) = cos(phi) * (-2 * Cdh * sx) -Cda * squareroot - Cda * (sx-Cw*cos(rho))^2 / squareroot;
+A(3,3) = cos(phi) * (-2 * Cdh * sx) - Cda * squareroot - Cda * (sx-Cw*cos(rho))^2 / squareroot;
 A(3,4) = cos(phi) * (-2 * Cdh * sy) - Cda * (sx-Cw*cos(rho))*(sy-Cw*sin(rho)) / squareroot;
 A(3,5) = -sin(phi) * (tanh(u_t) - Cdh*(sx^2+sy^2));
 A(3,6) = -Cda * Cw * sin(rho) * squareroot + Cda * (Cw*cos(rho) - sx) * (Cw*sx*sin(rho) - Cw*sy*cos(rho)) / squareroot;
 A(4,3) = sin(phi) * (-2 * Cdh * sx) - Cda * (sx-Cw*cos(rho))*(sy-Cw*sin(rho)) / squareroot;
-A(4,4) = sin(phi) * (-2 * Cdh * sy) -Cda * squareroot - Cda * (sy-Cw*sin(rho))^2 / squareroot;
+A(4,4) = sin(phi) * (-2 * Cdh * sy) - Cda * squareroot - Cda * (sy-Cw*sin(rho))^2 / squareroot;
 A(4,5) = cos(phi) * (tanh(u_t) - Cdh*(sx^2+sy^2));
 A(4,6) = Cda * Cw * cos(rho) * squareroot + Cda * (Cw*sin(rho) - sy) * (Cw*sx*sin(rho) - Cw*sy*cos(rho)) / squareroot;
 
@@ -265,7 +256,7 @@ Q_rho = estConst.WindAngleNoise;
 Q_b = estConst.GyroDriftNoise;
 Q_c = diag([Q_d, Q_r, Q_rho, Q_b]);
 
-P = reshape(P, size(A));
+P = reshape(P, [7,7]);
 dPdt = A * P + P * A' + L * Q_c * L';
 dPdt = dPdt(:);
 
