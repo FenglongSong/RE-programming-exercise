@@ -107,25 +107,27 @@ u_r = actuate(2);
 % solve xp[k]
 x0 = estState.xm';
 x0 = reshape(x0, [7,1]);
-% tspan = [tm-dt, tm];
 tspan = linspace(tm-dt, tm, 50);
-[t, x] = ode45(@(t, x) dynamics_mean(t, x, estConst, u_t, u_r), tspan, x0);
+[xt, x] = ode45(@(t, x) dynamics_mean(t, x, estConst, u_t, u_r), tspan, x0);
 xp = x(end, :)';
 
 % solve Pp[k]
 P0 = estState.Pm;
-[~, P] = ode45(@(t, P) dynamics_variance(t, P, estState.xm, estConst, u_t, u_r), tspan, P0(:));
+[Pt, P] = ode45(@(t, P) dynamics_variance(t, P, xt, x, estConst, u_t, u_r), tspan, P0(:));
 Pp = P(end, :);
 Pp = reshape(Pp, [7,7]);
+
+
+% P0 = estState.Pm;
+% [T, P] = ode45(@(T, P) podefcn(T, P, xt, x, actuate(1), actuate(2), estConst), tspan, P0(:));
+% Pp = P(end, :);
+% Pp = reshape(Pp, [7, 7]);
 
 
 %% measurement update
 px = xp(1);
 py = xp(2);
-sx = xp(3);
-sy = xp(4);
 phi = xp(5);
-rho = xp(6);
 b = xp(7);
 
 x_a = estConst.pos_radioA(1);
@@ -148,12 +150,17 @@ H(5,5) = 1;
 M = eye(5);
 R = diag([estConst.DistNoiseA, estConst.DistNoiseB, estConst.DistNoiseC, estConst.GyroNoise, estConst.CompassNoise]);
 z = sense';
-za = sqrt( (px-x_a)^2 + (py-y_a)^2 );
-zb = sqrt( (px-x_b)^2 + (py-y_c)^2 );
-zc = sqrt( (px-x_c)^2 + (py-y_c)^2 );
-zg = phi + b;
-zn = phi;
-h = [za, zb, zc, zg, zn]';
+% za = sqrt( (px-x_a)^2 + (py-y_a)^2 );
+% zb = sqrt( (px-x_b)^2 + (py-y_c)^2 );
+% zc = sqrt( (px-x_c)^2 + (py-y_c)^2 );
+% zg = phi + b;
+% zn = phi;
+% h = [za, zb, zc, zg, zn]';
+h = [sqrt( (px-x_a)^2 + (py-y_a)^2 );...
+    sqrt( (px-x_b)^2 + (py-y_b)^2 );...
+    sqrt( (px-x_c)^2 + (py-y_c)^2 );...
+    phi + b;...
+    phi];
 
 if sense(3) == inf
     H(3,:) = [];
@@ -207,21 +214,20 @@ Cw = estConst.windVel;
 dxdt = zeros(7,1);
 dxdt(1) = sx;
 dxdt(2) = sy;
-dxdt(3) = cos(phi)*(tanh(u_t) - Cdh*(sx^2+sy^2)) - Cda*(sx-Cw*cos(rho)) * sqrt( (sx-Cw*cos(rho))^2 + (sy-Cw*sin(rho))^2 );
-dxdt(4) = sin(phi)*(tanh(u_t) - Cdh*(sx^2+sy^2)) - Cda*(sy-Cw*sin(rho)) * sqrt( (sx-Cw*cos(rho))^2 + (sy-Cw*sin(rho))^2 );
+dxdt(3) = cos(phi)*(tanh(u_t) - Cdh*(sx^2+sy^2)) - Cda*(sx-Cw*cos(rho)) *...
+    sqrt( (sx-Cw*cos(rho))^2 + (sy-Cw*sin(rho))^2 );
+dxdt(4) = sin(phi)*(tanh(u_t) - Cdh*(sx^2+sy^2)) - Cda*(sy-Cw*sin(rho)) *...
+    sqrt( (sx-Cw*cos(rho))^2 + (sy-Cw*sin(rho))^2 );
 dxdt(5) = Cr * u_r;
-
 end
 
 
-function dPdt = dynamics_variance(t, P, x, estConst, u_t, u_r)
-px = x(1);
-py = x(2);
-sx = x(3);
-sy = x(4);
-phi = x(5);
-rho = x(6);
-b = x(7);
+function dPdt = dynamics_variance(t, P, xt, x, estConst, u_t, u_r)
+
+sx = interp1(xt, x(:,3), t);
+sy = interp1(xt, x(:,4), t);
+phi = interp1(xt, x(:,5), t);
+rho = interp1(xt, x(:,6), t);
 
 Cdh = estConst.dragCoefficientHydr;
 Cda = estConst.dragCoefficientAir;
@@ -259,5 +265,4 @@ Q_c = diag([Q_d, Q_r, Q_rho, Q_b]);
 P = reshape(P, [7,7]);
 dPdt = A * P + P * A' + L * Q_c * L';
 dPdt = dPdt(:);
-
 end
