@@ -150,12 +150,6 @@ H(5,5) = 1;
 M = eye(5);
 R = diag([estConst.DistNoiseA, estConst.DistNoiseB, estConst.DistNoiseC, estConst.GyroNoise, estConst.CompassNoise]);
 z = sense';
-% za = sqrt( (px-x_a)^2 + (py-y_a)^2 );
-% zb = sqrt( (px-x_b)^2 + (py-y_c)^2 );
-% zc = sqrt( (px-x_c)^2 + (py-y_c)^2 );
-% zg = phi + b;
-% zn = phi;
-% h = [za, zb, zc, zg, zn]';
 h = [sqrt( (px-x_a)^2 + (py-y_a)^2 );...
     sqrt( (px-x_b)^2 + (py-y_b)^2 );...
     sqrt( (px-x_c)^2 + (py-y_c)^2 );...

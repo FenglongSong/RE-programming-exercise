@@ -47,7 +47,7 @@ end
 
 % Checks if only base MATLAB functions are used, and prints an error
 % otherwise
-[~, deps] = matlab.codetools.requiredFilesAndProducts('Estimator');
+[~, deps] = matlab.codetools.requiredFilesAndProducts('Estimator_zh');
 depnames = {deps.Name}';
 if numel(depnames) > 1
      depstring = sprintf('- %s\n', depnames{:});
@@ -71,7 +71,7 @@ end
 N = simConst.N; 
 
 % Initialize the estimator.
-[posterior] = Estimator([],[],[],estConst,km(1));
+[posterior] = Estimator_zh([],[],[],estConst,km(1));
 
 % Get number of particles:
 N_particles = size(posterior.x_r,2);
@@ -100,7 +100,7 @@ for k = 2:N
             disp([num2str(round(k/N*100)),'% complete'])
         end
     end
-    [posterior] = Estimator(posterior,sense(k,:)',input(k-1,:)',estConst,km(k));
+    [posterior] = Estimator_zh(posterior,sense(k,:)',input(k-1,:)',estConst,km(k));
     % update storage arrays:
     x_r(k,:) = posterior.x_r;
     y_r(k,:) = posterior.y_r;
