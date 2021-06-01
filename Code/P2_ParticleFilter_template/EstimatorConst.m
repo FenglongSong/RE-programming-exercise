@@ -26,7 +26,7 @@ const.contour = [0.50, 0.00;
                  0.00, 2.50;
                  0.00, 0.50;
                  0.50, 0.50];
-             
+
 %% Initialization
 const.pA = [1.1,0.6]; % Center point pA of the initial position distribution
 const.pB = [1.8,2.0]; % Center point pB of the initial position distribution

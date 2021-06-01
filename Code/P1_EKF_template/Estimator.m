@@ -1,6 +1,6 @@
 function [posEst,linVelEst,oriEst,windEst,driftEst,...
           posVar,linVelVar,oriVar,windVar,driftVar,estState] = ...
-    Estimator(estState,actuate,sense,tm,estConst)
+    Estimator_mine(estState,actuate,sense,tm,estConst)
 % [posEst,linVelEst,oriEst,windEst,driftEst,...
 %    posVar,linVelVar,oriVar,windVar,driftVar,estState] = 
 % Estimator(estState,actuate,sense,tm,estConst)
@@ -192,13 +192,10 @@ end
 
 %% 
 function dxdt = dynamics_mean(t, x, estConst, u_t, u_r)
-px = x(1);
-py = x(2);
 sx = x(3);
 sy = x(4);
 phi = x(5);
 rho = x(6);
-b = x(7);
 
 Cdh = estConst.dragCoefficientHydr;
 Cda = estConst.dragCoefficientAir;
