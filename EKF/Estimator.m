@@ -118,12 +118,6 @@ Pp = P(end, :);
 Pp = reshape(Pp, [7,7]);
 
 
-% P0 = estState.Pm;
-% [T, P] = ode45(@(T, P) podefcn(T, P, xt, x, actuate(1), actuate(2), estConst), tspan, P0(:));
-% Pp = P(end, :);
-% Pp = reshape(Pp, [7, 7]);
-
-
 %% measurement update
 px = xp(1);
 py = xp(2);
